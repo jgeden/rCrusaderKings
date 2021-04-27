@@ -2,6 +2,7 @@ import praw
 import tweepy
 import requests
 import time
+import sys
 import config
 
 def reddit_login():
@@ -36,8 +37,10 @@ def post_tweet(title, img_path):
 
 		api.update_with_media(img_path, title)
 		print('Posted!')
+		return True
 	except:
-		print('Error during auth')
+		print('Error during posting')
+		return False
 
 def main():
 	# login to reddit
@@ -52,7 +55,8 @@ def main():
 	previous_posts_file.close()
 
 	# get top 10 current hottest posts
-	for submission in reddit.subreddit('CrusaderKings').hot(limit=10):
+	num = int(sys.argv[1])
+	for submission in reddit.subreddit('CrusaderKings').hot(limit=num):
 		if not submission.stickied:
 			# format the tweet title
 			title = str(submission.title) + ' #CrusaderKings'
@@ -61,22 +65,23 @@ def main():
 
 			# check if the post has an image
 			if '.png' in submission.url or '.jpg' in submission.url:
-				print('//////////////////////////////////')
-				print(title)
-				print('//////////////////////////////////\n')
 				
 				if (str(submission.title) + '\n') not in previous_posts:
+					print('//////////////////////////////////')
+					print(title)
+					print('//////////////////////////////////')
+					
 					# get the image from the post
 					get_image(submission.url)
 
 					# post the tweet
-					post_tweet(title, 'img.jpg')
-
-					outfile = open('previous_posts.txt', 'a')
-					outfile.write(str(submission.title) + '\n')
-					outfile.close()
+					if post_tweet(title, 'img.jpg'):
+						outfile = open('previous_posts.txt', 'a')
+						outfile.write(str(submission.title) + '\n')
+						outfile.close()
 				
-					time.sleep(5)
+						print()
+						time.sleep(5)
 				else:
 					print('Duplicate post')
 
